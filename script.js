@@ -1,7 +1,8 @@
 const STEPS = [
   {
     title: "Hi there my Babushka.",
-    subtitle: "I put together this little something with a (not so) surprise at the end. I hope you like it.",
+    subtitle:
+      "I put together this little something with a (not so) surprise at the end. I hope you like it.",
     prompt: "Are you ready?",
     options: [
       { label: "Let's Do it!!", next: 1, sound: "ok", kind: "primary" },
@@ -10,10 +11,16 @@ const STEPS = [
   },
   {
     title: "Question one.",
-    subtitle: "Who said \"I love you\" first?",
+    subtitle: 'Who said "I love you" first?',
     options: [
       { label: "Shao", toast: "Nope. Try again.", sound: "nope" },
-      { label: "Ty", toast: "And after all this time I'm still falling harder and harder for you", next: 2, sound: "correct", kind: "primary" }
+      {
+        label: "Ty",
+        toast: "And after all this time I'm still falling harder and harder for you",
+        next: 2,
+        sound: "correct",
+        kind: "primary"
+      }
     ]
   },
   {
@@ -29,9 +36,7 @@ const STEPS = [
     subtitle: "What is a cute date you want to go on?",
     input: true
   },
-  {
-    final: true
-  }
+  { final: true }
 ];
 
 let step = 0;
@@ -74,7 +79,7 @@ function render() {
     const o = document.createElement("div");
     o.className = "options";
 
-    s.options.forEach(opt => {
+    s.options.forEach((opt) => {
       const b = makeBtn(opt.label || "", opt.kind);
 
       if (opt.disabled) {
@@ -90,6 +95,7 @@ function render() {
           }
         };
       }
+
       o.appendChild(b);
     });
 
@@ -132,37 +138,12 @@ function render() {
     };
 
     const no = makeBtn("No");
+
     row.appendChild(yes);
     row.appendChild(no);
     stage.appendChild(row);
 
-    // Give her a moment to see them side by side, then the "No" button gets mischievous.
-    setTimeout(() => activateRunaway(no, row), 650);
-  };
-
-    // Invisible slot keeps both buttons same size and aligned.
-    const noSlot = makeBtn("No");
-    noSlot.style.opacity = "0";
-    noSlot.style.pointerEvents = "none";
-
-    row.appendChild(yes);
-    row.appendChild(noSlot);
-    stage.appendChild(row);
-
-    // Actual "No" button that runs away.
-    const no = makeBtn("No");
-    no.classList.add("runaway");
-    no.style.opacity = "0";
-    stage.appendChild(no);
-
-    setTimeout(() => activateRunaway(no, noSlot), 650);
-  };
-
-    const no = makeBtn("No");
-    row.appendChild(yes);
-    row.appendChild(no);
-    stage.appendChild(row);
-
+    // Show both for a moment, then only No becomes mischievous.
     setTimeout(() => activateRunaway(no, row), 650);
   }
 }
@@ -203,17 +184,19 @@ function toast(t) {
   toastEl.textContent = t;
   toastEl.dataset.open = "true";
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => toastEl.dataset.open = "false", 2600);
+  toast._t = setTimeout(() => (toastEl.dataset.open = "false"), 2600);
 }
 
 /* Runaway No button */
 function activateRunaway(noBtn, row) {
+  // Measure current layout before we move anything.
   const stageBox = stage.getBoundingClientRect();
   const noBox = noBtn.getBoundingClientRect();
 
   const w = Math.ceil(noBox.width);
   const h = Math.ceil(noBox.height);
 
+  // Placeholder keeps the row stable and keeps Yes visible.
   const placeholder = makeBtn("No");
   placeholder.style.opacity = "0";
   placeholder.style.pointerEvents = "none";
@@ -222,18 +205,18 @@ function activateRunaway(noBtn, row) {
 
   row.replaceChild(placeholder, noBtn);
 
+  // Move the real No into the stage as an absolutely positioned runaway button.
   noBtn.classList.add("runaway");
   noBtn.style.width = w + "px";
   noBtn.style.height = h + "px";
-  noBtn.style.left = (noBox.left - stageBox.left) + "px";
-  noBtn.style.top = (noBox.top - stageBox.top) + "px";
+  noBtn.style.left = `${noBox.left - stageBox.left}px`;
+  noBtn.style.top = `${noBox.top - stageBox.top}px`;
   noBtn.style.transform = "translate(0px, 0px)";
   noBtn.style.opacity = "1";
 
   stage.appendChild(noBtn);
 
   const run = () => runAway(noBtn);
-
   noBtn.addEventListener("mouseenter", run);
   noBtn.addEventListener("focus", run);
   noBtn.addEventListener(
@@ -290,7 +273,6 @@ function spawnHeart(nearCenter) {
   h.style.opacity = `${0.25 + Math.random() * 0.55}`;
 
   heartsEl.appendChild(h);
-
   setTimeout(() => h.remove(), (dur + delay) * 1000);
 }
 
