@@ -7,7 +7,6 @@
     <meta name="description" content="A small interactive Valentine’s request." />
     <link rel="stylesheet" href="./style.css" />
   </head>
-
   <body>
     <main class="app" aria-live="polite">
       <div class="bg" aria-hidden="true">
@@ -19,65 +18,34 @@
 
       <header class="topbar">
         <div class="brand">
-          <span class="dot" aria-hidden="true"></span>
+          <span class="dot"></span>
           <span class="brand-text">A small place for a big feeling</span>
         </div>
 
-        <button class="quiet" id="toggleAudio" type="button" aria-pressed="false" title="Toggle ambience">
-          <span class="quiet-icon" aria-hidden="true">♪</span>
+        <button class="quiet" id="toggleAudio" type="button">
+          <span class="quiet-icon">♪</span>
           <span class="quiet-text">Ambience</span>
         </button>
       </header>
 
-      <section class="card" role="region" aria-label="Valentine note">
+      <section class="card">
         <div class="card-inner">
-          <div class="progress" aria-hidden="true">
+          <div class="progress">
             <div class="progress-bar" id="progressBar"></div>
           </div>
 
-          <div class="to" id="toLine">To <span class="accent">Shao</span>,</div>
+          <div class="to" id="toLine"></div>
 
-          <h1 class="title" id="title">Hi, my favourite person.</h1>
+          <h1 class="title" id="title"></h1>
+          <p class="subtitle" id="subtitle"></p>
 
-          <p class="subtitle" id="subtitle">
-            I made a tiny place on the internet where I can be brave in a soft way, because I want to ask you something with intention.
-          </p>
-
-          <div class="divider" aria-hidden="true"></div>
+          <div class="divider"></div>
 
           <div class="stage" id="stage"></div>
-
-          <footer class="footer">
-            <div class="tiny" id="tinyLine">Made with steady hands and a loud heart.</div>
-          </footer>
         </div>
       </section>
 
-      <div class="modal" id="finalModal" role="dialog" aria-modal="true" aria-labelledby="finalTitle" aria-hidden="true">
-        <div class="modal-card">
-          <div class="modal-top">
-            <div class="badge">♡</div>
-            <button class="icon-btn" id="closeModal" type="button" aria-label="Close">×</button>
-          </div>
-
-          <h2 class="modal-title" id="finalTitle">Shao, will you be my Valentine?</h2>
-
-          <p class="modal-text" id="finalText">
-            A real question, from someone who likes you in a way that’s hard to pretend is casual.
-          </p>
-
-          <div class="modal-actions">
-            <button class="btn primary" id="yesBtn" type="button">Yes</button>
-            <button class="btn soft" id="maybeBtn" type="button">I need a second</button>
-          </div>
-
-          <p class="modal-note" id="modalNote">
-            (No pressure, only intention.)
-          </p>
-        </div>
-      </div>
-
-      <div class="toast" id="toast" role="status" aria-live="polite" aria-hidden="true"></div>
+      <div class="toast" id="toast"></div>
 
       <script src="./script.js"></script>
     </main>
