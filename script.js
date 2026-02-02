@@ -4,7 +4,7 @@ const STEPS = [
     subtitle: "I put together this little something with a (not so) surprise at the end. I hope you like it.",
     prompt: "Are you ready?",
     options: [
-      { label: "Let's Do it!!", next: 1, sound: "ok" },
+      { label: "Let's Do it!!", next: 1, sound: "ok", kind: "primary" },
       { label: "Next Time", toast: "KWANA!!", sound: "kwana" }
     ]
   },
@@ -13,15 +13,15 @@ const STEPS = [
     subtitle: "Who said \"I love you\" first?",
     options: [
       { label: "Shao", toast: "Nope. Try again.", sound: "nope" },
-      { label: "Ty", toast: "And after all this time I'm still falling harder and harder for you", next: 2, sound: "correct" }
+      { label: "Ty", toast: "And after all this time I'm still falling harder and harder for you", next: 2, sound: "correct", kind: "primary" }
     ]
   },
   {
     title: "Question two.",
     subtitle: "Who is always right?",
     options: [
-      { label: "Shao", toast: "Toruk Makto knows best.", next: 3, sound: "correct" },
-      { label: "Ty", transform: "Shao", toast: "Toruk Makto knows best.", next: 3, sound: "correct" }
+      { label: "Shao", toast: "Toruk Makto knows best.", next: 3, sound: "correct", kind: "primary" },
+      { label: "Ty", disabled: true }
     ]
   },
   {
@@ -42,9 +42,22 @@ const title = document.getElementById("title");
 const subtitle = document.getElementById("subtitle");
 const bar = document.getElementById("progressBar");
 const toastEl = document.getElementById("toast");
+const heartsEl = document.getElementById("hearts");
+const toLine = document.getElementById("toLine");
+const audioBtn = document.getElementById("toggleAudio");
+
+toLine.innerHTML = `To <span style="color: rgba(255,143,184,1); font-weight:700;">Shao</span>,`;
 
 let audioCtx = null;
+let audioEnabled = false;
 
+audioBtn.addEventListener("click", () => {
+  audioEnabled = true;
+  playSfx("ok");
+  audioBtn.querySelector(".quiet-text").textContent = "Sound on";
+});
+
+startHearts();
 render();
 
 function render() {
@@ -55,46 +68,48 @@ function render() {
   title.textContent = s.title || "";
   subtitle.textContent = s.subtitle || "";
 
-  if (s.prompt) stage.appendChild(p(s.prompt));
+  if (s.prompt) stage.appendChild(block(s.prompt));
 
   if (s.options) {
     const o = document.createElement("div");
     o.className = "options";
+
     s.options.forEach(opt => {
-      const b = btn(opt.label, "primary");
-      b.onclick = () => {
-        playSfx(opt.sound || "tap");
+      const b = makeBtn(opt.label || "", opt.kind);
 
-        if (opt.toast) toast(opt.toast);
-        if (opt.transform) b.textContent = opt.transform;
-
-        if (opt.next !== undefined) {
-          step = opt.next;
-          render();
-        }
-      };
+      if (opt.disabled) {
+        b.disabled = true;
+        b.classList.add("disabled");
+      } else {
+        b.onclick = () => {
+          playSfx(opt.sound || "tap");
+          if (opt.toast) toast(opt.toast);
+          if (opt.next !== undefined) {
+            step = opt.next;
+            render();
+          }
+        };
+      }
       o.appendChild(b);
     });
+
     stage.appendChild(o);
   }
 
   if (s.input) {
     const i = document.createElement("input");
+    i.className = "input";
     i.placeholder = "Type here…";
-    i.style.padding = "12px 12px";
-    i.style.borderRadius = "14px";
-    i.style.border = "1px solid rgba(255,255,255,.2)";
-    i.style.background = "rgba(0,0,0,.18)";
-    i.style.color = "rgba(246,242,255,.95)";
-    i.style.outline = "none";
+    i.maxLength = 90;
 
-    const b = btn("Lock it in", "primary");
+    const b = makeBtn("Lock it in", "primary");
     b.onclick = () => {
-      if (!i.value.trim()) {
+      const v = (i.value || "").trim();
+      if (!v) {
         playSfx("nope");
         return toast("Tell me first.");
       }
-      dateIdea = i.value.trim();
+      dateIdea = v;
       playSfx("correct");
       step++;
       render();
@@ -105,30 +120,23 @@ function render() {
   }
 
   if (s.final) {
-    stage.appendChild(p(`Will you be my Valentine and go to ${dateIdea} with me?`));
+    stage.appendChild(block(`Will you be my Valentine and go to ${dateIdea} with me?`));
 
-    const yes = btn("Yes", "primary");
+    const row = document.createElement("div");
+    row.className = "options equal";
+
+    const yes = makeBtn("Yes", "primary");
     yes.onclick = () => {
       playSfx("correct");
       celebrate();
     };
 
-    const no = btn("No", "runaway");
-    no.classList.add("runaway");
-    no.setAttribute("aria-label", "No (you cannot catch it)");
-    placeRunawayButton(no);
+    const no = makeBtn("No");
+    row.appendChild(yes);
+    row.appendChild(no);
+    stage.appendChild(row);
 
-    no.addEventListener("mouseenter", () => runAway(no));
-    no.addEventListener("focus", () => runAway(no));
-    no.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      runAway(no);
-    }, { passive: false });
-
-    stage.append(yes);
-    stage.append(no);
-
-    setTimeout(() => runAway(no), 400);
+    setTimeout(() => activateRunaway(no, row), 650);
   }
 }
 
@@ -144,37 +152,60 @@ function celebrate() {
       <div class="poster-sub">Screenshot this and send it to me.</div>
     </div>
   `;
+  toast("Locked in. ♡");
+  burstHearts(18);
 }
 
-function p(t) {
+/* UI helpers */
+function block(t) {
   const e = document.createElement("div");
   e.className = "step";
   e.textContent = t;
   return e;
 }
 
-function btn(t, kind) {
+function makeBtn(text, kind) {
   const b = document.createElement("button");
   b.className = "btn" + (kind === "primary" ? " primary" : "");
-  if (kind === "runaway") b.className = "btn runaway";
-  b.textContent = t;
+  b.type = "button";
+  b.textContent = text;
   return b;
 }
 
 function toast(t) {
   toastEl.textContent = t;
   toastEl.dataset.open = "true";
-  setTimeout(() => toastEl.dataset.open = "false", 2500);
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toastEl.dataset.open = "false", 2600);
 }
 
-/* ==========
-   No button runs away.
-   ========== */
-function placeRunawayButton(el) {
-  el.style.left = "0px";
-  el.style.top = "0px";
-  el.dataset.x = "0";
-  el.dataset.y = "0";
+/* Runaway No button */
+function activateRunaway(noBtn, row) {
+  const w = Math.ceil(noBtn.getBoundingClientRect().width);
+  const h = Math.ceil(noBtn.getBoundingClientRect().height);
+  noBtn.style.width = w + "px";
+  noBtn.style.height = h + "px";
+
+  const stageBox = stage.getBoundingClientRect();
+  const rowBox = row.getBoundingClientRect();
+  const noBox = noBtn.getBoundingClientRect();
+
+  const startX = (noBox.left - stageBox.left);
+  const startY = (rowBox.top - stageBox.top);
+
+  noBtn.classList.add("runaway");
+  noBtn.style.left = startX + "px";
+  noBtn.style.top = startY + "px";
+
+  row.style.visibility = "hidden";
+
+  const run = () => runAway(noBtn);
+
+  noBtn.addEventListener("mouseenter", run);
+  noBtn.addEventListener("focus", run);
+  noBtn.addEventListener("touchstart", (e) => { e.preventDefault(); run(); }, { passive: false });
+
+  setTimeout(() => runAway(noBtn), 250);
 }
 
 function runAway(el) {
@@ -189,16 +220,47 @@ function runAway(el) {
   const y = Math.floor(Math.random() * maxY);
 
   el.style.transform = `translate(${x}px, ${y}px)`;
-  el.dataset.x = String(x);
-  el.dataset.y = String(y);
-
   playSfx("nope");
 }
 
-/* ==========
-   Sound effects.
-   ========== */
+/* Cute background hearts */
+function startHearts() {
+  setInterval(() => {
+    if (Math.random() < 0.75) spawnHeart(false);
+  }, 520);
+}
+
+function spawnHeart(nearCenter) {
+  if (!heartsEl) return;
+
+  const h = document.createElement("div");
+  h.className = "heart";
+
+  const left = nearCenter ? 40 + Math.random() * 20 : Math.random() * 100;
+  const size = 8 + Math.random() * 14;
+  const dur = 5 + Math.random() * 6;
+  const delay = Math.random() * 0.2;
+
+  h.style.left = `${left}vw`;
+  h.style.bottom = `-20px`;
+  h.style.width = `${size}px`;
+  h.style.height = `${size}px`;
+  h.style.animationDuration = `${dur}s`;
+  h.style.animationDelay = `${delay}s`;
+  h.style.opacity = `${0.25 + Math.random() * 0.55}`;
+
+  heartsEl.appendChild(h);
+
+  setTimeout(() => h.remove(), (dur + delay) * 1000);
+}
+
+function burstHearts(n) {
+  for (let i = 0; i < n; i++) setTimeout(() => spawnHeart(true), i * 35);
+}
+
+/* Sound effects */
 function ensureAudio() {
+  if (!audioEnabled) return null;
   if (audioCtx) return audioCtx;
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return null;
@@ -231,6 +293,8 @@ function playTone(freq, durationMs, type, gainVal) {
 }
 
 function playSfx(kind) {
+  if (!audioEnabled && kind !== "ok") return;
+
   if (kind === "correct") {
     playTone(523.25, 90, "sine", 0.09);
     setTimeout(() => playTone(659.25, 110, "sine", 0.08), 90);
@@ -251,6 +315,7 @@ function playSfx(kind) {
   }
 
   if (kind === "ok") {
+    audioEnabled = true;
     playTone(440, 70, "sine", 0.05);
     return;
   }
@@ -258,9 +323,7 @@ function playSfx(kind) {
   playTone(392, 45, "sine", 0.03);
 }
 
-/* ==========
-   Safety: avoid injecting user text into HTML unsafely.
-   ========== */
+/* Safety */
 function escapeHtml(str) {
   return String(str)
     .replaceAll("&", "&amp;")
