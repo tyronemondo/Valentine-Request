@@ -1,356 +1,369 @@
-const STEPS = [
-  {
-    title: "Hi there my Babushka.",
-    subtitle:
-      "I put together this little something with a (not so) surprise at the end. I hope you like it.",
-    prompt: "Are you ready?",
-    options: [
-      { label: "Let's Do it!!", next: 1, sound: "ok", kind: "primary" },
-      { label: "Next Time", toast: "KWANA!!", sound: "kwana" }
-    ]
-  },
-  {
-    title: "Question one.",
-    subtitle: 'Who said "I love you" first?',
-    options: [
-      { label: "Shao", toast: "Nope. Try again.", sound: "nope" },
+(function () {
+  "use strict";
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var stage = document.getElementById("stage");
+    var title = document.getElementById("title");
+    var subtitle = document.getElementById("subtitle");
+    var bar = document.getElementById("progressBar");
+    var toastEl = document.getElementById("toast");
+    var heartsEl = document.getElementById("hearts");
+    var toLine = document.getElementById("toLine");
+    var audioBtn = document.getElementById("toggleAudio");
+
+    // If anything essential is missing, show a clear message instead of failing silently.
+    if (!stage || !title || !subtitle || !bar || !toastEl || !heartsEl || !toLine || !audioBtn) {
+      document.body.innerHTML = "<div style='padding:24px;font-family:system-ui;color:#fff;'>Something didn’t load. Make sure index.html, style.css, and script.js are in the repo root.</div>";
+      return;
+    }
+
+    toLine.innerHTML = "To <span style='color: rgba(255,143,184,1); font-weight:700;'>Shao</span>,";
+
+    var STEPS = [
       {
-        label: "Ty",
-        toast: "And after all this time I'm still falling harder and harder for you",
-        next: 2,
-        sound: "correct",
-        kind: "primary"
-      }
-    ]
-  },
-  {
-    title: "Question two.",
-    subtitle: "Who is always right?",
-    options: [
-      { label: "Shao", toast: "Toruk Makto knows best.", next: 3, sound: "correct", kind: "primary" },
-      { label: "Ty", disabled: true }
-    ]
-  },
-  {
-    title: "Question three.",
-    subtitle: "What is a cute date you want to go on?",
-    input: true
-  },
-  { final: true }
-];
+        title: "Hi there my Babushka.",
+        subtitle: "I put together this little something with a (not so) surprise at the end. I hope you like it.",
+        prompt: "Are you ready?",
+        options: [
+          { label: "Let's Do it!!", next: 1, sound: "ok", kind: "primary" },
+          { label: "Next Time", toast: "KWANA!!", sound: "kwana" }
+        ]
+      },
+      {
+        title: "Question one.",
+        subtitle: "Who said \"I love you\" first?",
+        options: [
+          { label: "Shao", toast: "Nope. Try again.", sound: "nope" },
+          { label: "Ty", toast: "And after all this time I'm still falling harder and harder for you", next: 2, sound: "correct", kind: "primary" }
+        ]
+      },
+      {
+        title: "Question two.",
+        subtitle: "Who is always right?",
+        options: [
+          { label: "Shao", toast: "Toruk Makto knows best.", next: 3, sound: "correct", kind: "primary" },
+          { label: "Ty", disabled: true }
+        ]
+      },
+      {
+        title: "Question three.",
+        subtitle: "What is a cute date you want to go on?",
+        input: true
+      },
+      { final: true }
+    ];
 
-let step = 0;
-let dateIdea = "";
+    var step = 0;
+    var dateIdea = "";
 
-const stage = document.getElementById("stage");
-const title = document.getElementById("title");
-const subtitle = document.getElementById("subtitle");
-const bar = document.getElementById("progressBar");
-const toastEl = document.getElementById("toast");
-const heartsEl = document.getElementById("hearts");
-const toLine = document.getElementById("toLine");
-const audioBtn = document.getElementById("toggleAudio");
+    // Sound
+    var audioCtx = null;
+    var audioEnabled = false;
 
-toLine.innerHTML = `To <span style="color: rgba(255,143,184,1); font-weight:700;">Shao</span>,`;
-
-let audioCtx = null;
-let audioEnabled = false;
-
-audioBtn.addEventListener("click", () => {
-  audioEnabled = true;
-  playSfx("ok");
-  audioBtn.querySelector(".quiet-text").textContent = "Sound on";
-});
-
-startHearts();
-render();
-
-function render() {
-  stage.innerHTML = "";
-  bar.style.width = `${(step / STEPS.length) * 100}%`;
-
-  const s = STEPS[step];
-  title.textContent = s.title || "";
-  subtitle.textContent = s.subtitle || "";
-
-  if (s.prompt) stage.appendChild(block(s.prompt));
-
-  if (s.options) {
-    const o = document.createElement("div");
-    o.className = "options";
-
-    s.options.forEach((opt) => {
-      const b = makeBtn(opt.label || "", opt.kind);
-
-      if (opt.disabled) {
-        b.disabled = true;
-        b.classList.add("disabled");
-      } else {
-        b.onclick = () => {
-          playSfx(opt.sound || "tap");
-          if (opt.toast) toast(opt.toast);
-          if (opt.next !== undefined) {
-            step = opt.next;
-            render();
-          }
-        };
-      }
-
-      o.appendChild(b);
+    audioBtn.addEventListener("click", function () {
+      audioEnabled = true;
+      playSfx("ok");
+      var t = audioBtn.querySelector(".quiet-text");
+      if (t) t.textContent = "Sound on";
     });
 
-    stage.appendChild(o);
-  }
+    // Hearts
+    startHearts();
 
-  if (s.input) {
-    const i = document.createElement("input");
-    i.className = "input";
-    i.placeholder = "Type here…";
-    i.maxLength = 90;
+    // Render first screen
+    render();
 
-    const b = makeBtn("Lock it in", "primary");
-    b.onclick = () => {
-      const v = (i.value || "").trim();
-      if (!v) {
-        playSfx("nope");
-        return toast("Tell me first.");
+    function render() {
+      stage.innerHTML = "";
+      bar.style.width = Math.round((step / STEPS.length) * 100) + "%";
+
+      var s = STEPS[step];
+      title.textContent = s.title || "";
+      subtitle.textContent = s.subtitle || "";
+
+      if (s.prompt) stage.appendChild(block(s.prompt));
+
+      if (s.options) {
+        var o = document.createElement("div");
+        o.className = "options";
+
+        s.options.forEach(function (opt) {
+          var b = makeBtn(opt.label || "", opt.kind);
+
+          if (opt.disabled) {
+            b.disabled = true;
+          } else {
+            b.addEventListener("click", function () {
+              playSfx(opt.sound || "tap");
+              if (opt.toast) toast(opt.toast);
+              if (typeof opt.next === "number") {
+                step = opt.next;
+                render();
+              }
+            });
+          }
+
+          o.appendChild(b);
+        });
+
+        stage.appendChild(o);
       }
-      dateIdea = v;
-      playSfx("correct");
-      step++;
-      render();
-    };
 
-    stage.append(i, b);
-    setTimeout(() => i.focus(), 120);
-  }
+      if (s.input) {
+        var i = document.createElement("input");
+        i.className = "input";
+        i.placeholder = "Type here…";
+        i.maxLength = 90;
 
-  if (s.final) {
-    stage.appendChild(block(`Will you be my Valentine and go to ${dateIdea} with me?`));
+        var b2 = makeBtn("Lock it in", "primary");
+        b2.addEventListener("click", function () {
+          var v = (i.value || "").trim();
+          if (!v) {
+            playSfx("nope");
+            toast("Tell me first.");
+            return;
+          }
+          dateIdea = v;
+          playSfx("correct");
+          step = step + 1;
+          render();
+        });
 
-    const row = document.createElement("div");
-    row.className = "options equal";
+        stage.appendChild(i);
+        stage.appendChild(b2);
 
-    const yes = makeBtn("Yes", "primary");
-    yes.onclick = () => {
-      playSfx("correct");
-      celebrate();
-    };
+        setTimeout(function () { i.focus(); }, 120);
+      }
 
-    const no = makeBtn("No");
+      if (s.final) {
+        stage.appendChild(block("Will you be my Valentine and go to " + dateIdea + " with me?"));
 
-    row.appendChild(yes);
-    row.appendChild(no);
-    stage.appendChild(row);
+        var row = document.createElement("div");
+        row.className = "options equal";
 
-    // Show both for a moment, then only No becomes mischievous.
-    setTimeout(() => activateRunaway(no, row), 650);
-  }
-}
+        var yes = makeBtn("Yes", "primary");
+        yes.addEventListener("click", function () {
+          playSfx("correct");
+          celebrate();
+        });
 
-function celebrate() {
-  stage.innerHTML = `
-    <div class="poster">
-      <div class="poster-title">I love you the most my princess.</div>
-      <div class="poster-lines">
-        <span class="poster-line">Me <strong>vs</strong> You.</span>
-        <span class="poster-line"><strong>Feb 14th.</strong></span>
-        <span class="poster-line">Going to <strong>${escapeHtml(dateIdea)}</strong>.</span>
-      </div>
-      <div class="poster-sub">Screenshot this and send it to me.</div>
-    </div>
-  `;
-  toast("Locked in. ♡");
-  burstHearts(18);
-}
+        var no = makeBtn("No");
+        row.appendChild(yes);
+        row.appendChild(no);
+        stage.appendChild(row);
 
-/* UI helpers */
-function block(t) {
-  const e = document.createElement("div");
-  e.className = "step";
-  e.textContent = t;
-  return e;
-}
+        setTimeout(function () {
+          activateRunaway(no, row);
+        }, 650);
+      }
+    }
 
-function makeBtn(text, kind) {
-  const b = document.createElement("button");
-  b.className = "btn" + (kind === "primary" ? " primary" : "");
-  b.type = "button";
-  b.textContent = text;
-  return b;
-}
+    function celebrate() {
+      stage.innerHTML =
+        "<div class='poster'>" +
+        "<div class='poster-title'>I love you the most my princess.</div>" +
+        "<div class='poster-lines'>" +
+        "<span class='poster-line'>Me <strong>vs</strong> You.</span>" +
+        "<span class='poster-line'><strong>Feb 14th.</strong></span>" +
+        "<span class='poster-line'>Going to <strong>" + escapeHtml(dateIdea) + "</strong>.</span>" +
+        "</div>" +
+        "<div class='poster-sub'>Screenshot this and send it to me.</div>" +
+        "</div>";
 
-function toast(t) {
-  toastEl.textContent = t;
-  toastEl.dataset.open = "true";
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => (toastEl.dataset.open = "false"), 2600);
-}
+      toast("Locked in. ♡");
+      burstHearts(18);
+    }
 
-/* Runaway No button */
-function activateRunaway(noBtn, row) {
-  // Measure current layout before we move anything.
-  const stageBox = stage.getBoundingClientRect();
-  const noBox = noBtn.getBoundingClientRect();
+    // UI helpers
+    function block(t) {
+      var e = document.createElement("div");
+      e.className = "step";
+      e.textContent = t;
+      return e;
+    }
 
-  const w = Math.ceil(noBox.width);
-  const h = Math.ceil(noBox.height);
+    function makeBtn(text, kind) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn" + (kind === "primary" ? " primary" : "");
+      b.textContent = text;
+      return b;
+    }
 
-  // Placeholder keeps the row stable and keeps Yes visible.
-  const placeholder = makeBtn("No");
-  placeholder.style.opacity = "0";
-  placeholder.style.pointerEvents = "none";
-  placeholder.style.width = w + "px";
-  placeholder.style.height = h + "px";
+    function toast(t) {
+      toastEl.textContent = t;
+      toastEl.dataset.open = "true";
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () {
+        toastEl.dataset.open = "false";
+      }, 2600);
+    }
 
-  row.replaceChild(placeholder, noBtn);
+    // Runaway No button: replace it with an invisible placeholder, then move the real button into the stage.
+    function activateRunaway(noBtn, row) {
+      var stageBox = stage.getBoundingClientRect();
+      var noBox = noBtn.getBoundingClientRect();
 
-  // Move the real No into the stage as an absolutely positioned runaway button.
-  noBtn.classList.add("runaway");
-  noBtn.style.width = w + "px";
-  noBtn.style.height = h + "px";
-  noBtn.style.left = `${noBox.left - stageBox.left}px`;
-  noBtn.style.top = `${noBox.top - stageBox.top}px`;
-  noBtn.style.transform = "translate(0px, 0px)";
-  noBtn.style.opacity = "1";
+      var w = Math.ceil(noBox.width);
+      var h = Math.ceil(noBox.height);
 
-  stage.appendChild(noBtn);
+      var placeholder = makeBtn("No");
+      placeholder.style.opacity = "0";
+      placeholder.style.pointerEvents = "none";
+      placeholder.style.width = w + "px";
+      placeholder.style.height = h + "px";
 
-  const run = () => runAway(noBtn);
-  noBtn.addEventListener("mouseenter", run);
-  noBtn.addEventListener("focus", run);
-  noBtn.addEventListener(
-    "touchstart",
-    (e) => {
-      e.preventDefault();
-      run();
-    },
-    { passive: false }
-  );
+      row.replaceChild(placeholder, noBtn);
 
-  setTimeout(() => runAway(noBtn), 250);
-}
+      noBtn.classList.add("runaway");
+      noBtn.style.width = w + "px";
+      noBtn.style.height = h + "px";
+      noBtn.style.left = (noBox.left - stageBox.left) + "px";
+      noBtn.style.top = (noBox.top - stageBox.top) + "px";
+      noBtn.style.transform = "translate(0px, 0px)";
+      stage.appendChild(noBtn);
 
-function runAway(el) {
-  const padding = 10;
-  const bounds = stage.getBoundingClientRect();
-  const b = el.getBoundingClientRect();
+      var run = function () { runAway(noBtn); };
 
-  const maxX = Math.max(padding, bounds.width - b.width - padding);
-  const maxY = Math.max(padding, bounds.height - b.height - padding);
+      noBtn.addEventListener("mouseenter", run);
+      noBtn.addEventListener("focus", run);
+      noBtn.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        run();
+      }, { passive: false });
 
-  const x = Math.floor(Math.random() * maxX);
-  const y = Math.floor(Math.random() * maxY);
+      setTimeout(function () { runAway(noBtn); }, 250);
+    }
 
-  el.style.transform = `translate(${x}px, ${y}px)`;
-  playSfx("nope");
-}
+    function runAway(el) {
+      var padding = 10;
+      var bounds = stage.getBoundingClientRect();
+      var b = el.getBoundingClientRect();
 
-/* Cute background hearts */
-function startHearts() {
-  setInterval(() => {
-    if (Math.random() < 0.75) spawnHeart(false);
-  }, 520);
-}
+      var maxX = Math.max(padding, bounds.width - b.width - padding);
+      var maxY = Math.max(padding, bounds.height - b.height - padding);
 
-function spawnHeart(nearCenter) {
-  if (!heartsEl) return;
+      var x = Math.floor(Math.random() * maxX);
+      var y = Math.floor(Math.random() * maxY);
 
-  const h = document.createElement("div");
-  h.className = "heart";
+      el.style.transform = "translate(" + x + "px, " + y + "px)";
+      playSfx("nope");
+    }
 
-  const left = nearCenter ? 40 + Math.random() * 20 : Math.random() * 100;
-  const size = 8 + Math.random() * 14;
-  const dur = 5 + Math.random() * 6;
-  const delay = Math.random() * 0.2;
+    // Hearts
+    function startHearts() {
+      setInterval(function () {
+        if (Math.random() < 0.75) spawnHeart(false);
+      }, 520);
+    }
 
-  h.style.left = `${left}vw`;
-  h.style.bottom = `-20px`;
-  h.style.width = `${size}px`;
-  h.style.height = `${size}px`;
-  h.style.animationDuration = `${dur}s`;
-  h.style.animationDelay = `${delay}s`;
-  h.style.opacity = `${0.25 + Math.random() * 0.55}`;
+    function spawnHeart(nearCenter) {
+      var h = document.createElement("div");
+      h.className = "heart";
 
-  heartsEl.appendChild(h);
-  setTimeout(() => h.remove(), (dur + delay) * 1000);
-}
+      var left = nearCenter ? 40 + Math.random() * 20 : Math.random() * 100;
+      var size = 8 + Math.random() * 14;
+      var dur = 5 + Math.random() * 6;
+      var delay = Math.random() * 0.2;
 
-function burstHearts(n) {
-  for (let i = 0; i < n; i++) setTimeout(() => spawnHeart(true), i * 35);
-}
+      h.style.left = left + "vw";
+      h.style.bottom = "-20px";
+      h.style.width = size + "px";
+      h.style.height = size + "px";
+      h.style.animationDuration = dur + "s";
+      h.style.animationDelay = delay + "s";
+      h.style.opacity = (0.25 + Math.random() * 0.55).toFixed(2);
 
-/* Sound effects */
-function ensureAudio() {
-  if (!audioEnabled) return null;
-  if (audioCtx) return audioCtx;
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  if (!Ctx) return null;
-  audioCtx = new Ctx();
-  return audioCtx;
-}
+      heartsEl.appendChild(h);
 
-function playTone(freq, durationMs, type, gainVal) {
-  const ctx = ensureAudio();
-  if (!ctx) return;
+      setTimeout(function () {
+        if (h && h.parentNode) h.parentNode.removeChild(h);
+      }, (dur + delay) * 1000);
+    }
 
-  const o = ctx.createOscillator();
-  const g = ctx.createGain();
+    function burstHearts(n) {
+      for (var i = 0; i < n; i++) {
+        (function (k) {
+          setTimeout(function () { spawnHeart(true); }, k * 35);
+        })(i);
+      }
+    }
 
-  o.type = type || "sine";
-  o.frequency.value = freq;
+    // Sound
+    function ensureAudio() {
+      if (!audioEnabled) return null;
+      if (audioCtx) return audioCtx;
 
-  const now = ctx.currentTime;
-  const dur = Math.max(0.03, durationMs / 1000);
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
 
-  g.gain.setValueAtTime(0.0001, now);
-  g.gain.exponentialRampToValueAtTime(gainVal || 0.08, now + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      audioCtx = new Ctx();
+      return audioCtx;
+    }
 
-  o.connect(g);
-  g.connect(ctx.destination);
+    function playTone(freq, durationMs, type, gainVal) {
+      var ctx = ensureAudio();
+      if (!ctx) return;
 
-  o.start(now);
-  o.stop(now + dur + 0.02);
-}
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
 
-function playSfx(kind) {
-  if (!audioEnabled && kind !== "ok") return;
+      o.type = type || "sine";
+      o.frequency.value = freq;
 
-  if (kind === "correct") {
-    playTone(523.25, 90, "sine", 0.09);
-    setTimeout(() => playTone(659.25, 110, "sine", 0.08), 90);
-    setTimeout(() => playTone(783.99, 140, "triangle", 0.07), 210);
-    return;
-  }
+      var now = ctx.currentTime;
+      var dur = Math.max(0.03, durationMs / 1000);
 
-  if (kind === "nope") {
-    playTone(220, 90, "square", 0.06);
-    setTimeout(() => playTone(196, 110, "square", 0.05), 85);
-    return;
-  }
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(gainVal || 0.08, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
-  if (kind === "kwana") {
-    playTone(330, 70, "triangle", 0.07);
-    setTimeout(() => playTone(262, 120, "triangle", 0.07), 80);
-    return;
-  }
+      o.connect(g);
+      g.connect(ctx.destination);
 
-  if (kind === "ok") {
-    audioEnabled = true;
-    playTone(440, 70, "sine", 0.05);
-    return;
-  }
+      o.start(now);
+      o.stop(now + dur + 0.02);
+    }
 
-  playTone(392, 45, "sine", 0.03);
-}
+    function playSfx(kind) {
+      if (!audioEnabled && kind !== "ok") return;
 
-/* Safety */
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+      if (kind === "correct") {
+        playTone(523.25, 90, "sine", 0.09);
+        setTimeout(function () { playTone(659.25, 110, "sine", 0.08); }, 90);
+        setTimeout(function () { playTone(783.99, 140, "triangle", 0.07); }, 210);
+        return;
+      }
+
+      if (kind === "nope") {
+        playTone(220, 90, "square", 0.06);
+        setTimeout(function () { playTone(196, 110, "square", 0.05); }, 85);
+        return;
+      }
+
+      if (kind === "kwana") {
+        playTone(330, 70, "triangle", 0.07);
+        setTimeout(function () { playTone(262, 120, "triangle", 0.07); }, 80);
+        return;
+      }
+
+      if (kind === "ok") {
+        audioEnabled = true;
+        playTone(440, 70, "sine", 0.05);
+        return;
+      }
+
+      playTone(392, 45, "sine", 0.03);
+    }
+
+    // Safety
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  });
+})();

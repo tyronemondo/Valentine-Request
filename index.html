@@ -8,26 +8,26 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <main class="app" aria-live="polite">
-      <div class="bg" aria-hidden="true">
-        <div class="grain"></div>
-        <div class="glow glow-a"></div>
-        <div class="glow glow-b"></div>
-        <div class="hearts" id="hearts"></div>
+    <div class="bg" aria-hidden="true">
+      <div class="grain"></div>
+      <div class="glow glow-a"></div>
+      <div class="glow glow-b"></div>
+      <div class="hearts" id="hearts"></div>
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <span class="brand-text">A small place for a big feeling</span>
       </div>
 
-      <header class="topbar">
-        <div class="brand">
-          <span class="dot"></span>
-          <span class="brand-text">A small place for a big feeling</span>
-        </div>
+      <button class="quiet" id="toggleAudio" type="button">
+        <span class="quiet-icon">♪</span>
+        <span class="quiet-text">Tap for sound</span>
+      </button>
+    </header>
 
-        <button class="quiet" id="toggleAudio" type="button">
-          <span class="quiet-icon">♪</span>
-          <span class="quiet-text">Tap for sound</span>
-        </button>
-      </header>
-
+    <main class="app" aria-live="polite">
       <section class="card">
         <div class="card-inner">
           <div class="progress">
@@ -44,10 +44,10 @@
           <div class="stage" id="stage"></div>
         </div>
       </section>
-
-      <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-      <script src="./script.js"></script>
     </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./script.js"></script>
   </body>
 </html>
