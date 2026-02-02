@@ -131,6 +131,15 @@ function render() {
       celebrate();
     };
 
+    const no = makeBtn("No");
+    row.appendChild(yes);
+    row.appendChild(no);
+    stage.appendChild(row);
+
+    // Give her a moment to see them side by side, then the "No" button gets mischievous.
+    setTimeout(() => activateRunaway(no, row), 650);
+  };
+
     // Invisible slot keeps both buttons same size and aligned.
     const noSlot = makeBtn("No");
     noSlot.style.opacity = "0";
@@ -198,27 +207,36 @@ function toast(t) {
 }
 
 /* Runaway No button */
-function activateRunaway(runawayBtn, slotBtn) {
-  const w = Math.ceil(slotBtn.getBoundingClientRect().width);
-  const h = Math.ceil(slotBtn.getBoundingClientRect().height);
-  runawayBtn.style.width = w + "px";
-  runawayBtn.style.height = h + "px";
-
+function activateRunaway(noBtn, row) {
   const stageBox = stage.getBoundingClientRect();
-  const slotBox = slotBtn.getBoundingClientRect();
+  const noBox = noBtn.getBoundingClientRect();
 
-  const startX = (slotBox.left - stageBox.left);
-  const startY = (slotBox.top - stageBox.top);
+  const w = Math.ceil(noBox.width);
+  const h = Math.ceil(noBox.height);
 
-  runawayBtn.style.left = startX + "px";
-  runawayBtn.style.top = startY + "px";
-  runawayBtn.style.opacity = "1";
+  const placeholder = makeBtn("No");
+  placeholder.style.opacity = "0";
+  placeholder.style.pointerEvents = "none";
+  placeholder.style.width = w + "px";
+  placeholder.style.height = h + "px";
 
-  const run = () => runAway(runawayBtn);
+  row.replaceChild(placeholder, noBtn);
 
-  runawayBtn.addEventListener("mouseenter", run);
-  runawayBtn.addEventListener("focus", run);
-  runawayBtn.addEventListener(
+  noBtn.classList.add("runaway");
+  noBtn.style.width = w + "px";
+  noBtn.style.height = h + "px";
+  noBtn.style.left = (noBox.left - stageBox.left) + "px";
+  noBtn.style.top = (noBox.top - stageBox.top) + "px";
+  noBtn.style.transform = "translate(0px, 0px)";
+  noBtn.style.opacity = "1";
+
+  stage.appendChild(noBtn);
+
+  const run = () => runAway(noBtn);
+
+  noBtn.addEventListener("mouseenter", run);
+  noBtn.addEventListener("focus", run);
+  noBtn.addEventListener(
     "touchstart",
     (e) => {
       e.preventDefault();
@@ -227,7 +245,7 @@ function activateRunaway(runawayBtn, slotBtn) {
     { passive: false }
   );
 
-  setTimeout(() => runAway(runawayBtn), 250);
+  setTimeout(() => runAway(noBtn), 250);
 }
 
 function runAway(el) {
